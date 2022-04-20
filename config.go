@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	defaultConfig = "workerConfig.json"
-	workerConfig  = "workerConfig_active.json"
+	defaultConfig = "appConfig.json"
+	activeConfig  = "appConfig_active.json"
 )
 
 type Data[T any] struct {
@@ -23,10 +23,10 @@ type Data[T any] struct {
 	Subscribers []chan bool
 }
 
-type ConfigNotify int
+type Notify int
 
 const (
-	SHOULD_NOTIFY ConfigNotify = iota
+	SHOULD_NOTIFY Notify = iota
 	DONT_NOTIFY
 )
 
@@ -39,8 +39,8 @@ func NewConfig[T any](numberOfSubs int) *Data[T] {
 
 	c.File = defaultConfig
 	c.UpdateVersion(DONT_NOTIFY)
-	if _, err := os.Stat(workerConfig); err == nil {
-		c.File = workerConfig
+	if _, err := os.Stat(activeConfig); err == nil {
+		c.File = activeConfig
 	}
 
 	err := configor.Load(&c.Cfg, c.File)
@@ -48,7 +48,7 @@ func NewConfig[T any](numberOfSubs int) *Data[T] {
 		log.Fatal("Configuration error: ", err)
 	}
 
-	c.File = workerConfig
+	c.File = activeConfig
 	c.PersistToFile()
 
 	return c
@@ -60,7 +60,7 @@ func (c *Data[T]) UpdateConfig(newConfig T) {
 	c.UpdateVersion(SHOULD_NOTIFY)
 }
 
-func (c *Data[T]) UpdateVersion(n ConfigNotify) {
+func (c *Data[T]) UpdateVersion(n Notify) {
 	c.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	if n == SHOULD_NOTIFY {
 		for i := 0; i < len(c.Subscribers); i++ {
