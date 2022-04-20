@@ -17,7 +17,7 @@ var (
 )
 
 type Data[T any] struct {
-	File        string
+	file        string
 	Timestamp   string
 	Cfg         T
 	Subscribers []chan bool
@@ -37,30 +37,30 @@ func NewConfig[T any](numberOfSubs int) *Data[T] {
 		c.Subscribers = append(c.Subscribers, make(chan bool))
 	}
 
-	c.File = defaultConfig
-	c.UpdateVersion(DONT_NOTIFY)
+	c.file = defaultConfig
+	c.updateVersion(DONT_NOTIFY)
 	if _, err := os.Stat(activeConfig); err == nil {
-		c.File = activeConfig
+		c.file = activeConfig
 	}
 
-	err := configor.Load(&c.Cfg, c.File)
+	err := configor.Load(&c.Cfg, c.file)
 	if err != nil {
 		log.Fatal("Configuration error: ", err)
 	}
 
-	c.File = activeConfig
-	c.PersistToFile()
+	c.file = activeConfig
+	c.persistToFile()
 
 	return c
 }
 
 func (c *Data[T]) UpdateConfig(newConfig T) {
 	c.Cfg = newConfig
-	c.PersistToFile()
-	c.UpdateVersion(SHOULD_NOTIFY)
+	c.persistToFile()
+	c.updateVersion(SHOULD_NOTIFY)
 }
 
-func (c *Data[T]) UpdateVersion(n Notify) {
+func (c *Data[T]) updateVersion(n Notify) {
 	c.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	if n == SHOULD_NOTIFY {
 		for i := 0; i < len(c.Subscribers); i++ {
@@ -69,7 +69,7 @@ func (c *Data[T]) UpdateVersion(n Notify) {
 	}
 }
 
-func (c *Data[T]) PersistToFile() {
+func (c *Data[T]) persistToFile() {
 	file, _ := json.MarshalIndent(c.Cfg, "", "	")
-	_ = ioutil.WriteFile(c.File, file, 0644)
+	_ = ioutil.WriteFile(c.file, file, 0644)
 }
