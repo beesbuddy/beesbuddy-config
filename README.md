@@ -1,5 +1,5 @@
 # config
-Configuration module for `tableassistant` based on [configor](github.com/jinzhu/configor) tool.
+Configuration module for `tableassistant` based on [configor](https://github.com/jinzhu/configor) tool.
 
 ### How to use
 Write config structure of your app. Actual config should be placed in root folder named `appConfig.json` 
