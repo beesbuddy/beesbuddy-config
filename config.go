@@ -33,22 +33,20 @@ const (
 func NewConfig[T any](numberOfSubs int) *Data[T] {
 	c := new(Data[T])
 
-	for i := 0; i < numberOfSubs; i++ {
-		c.Subscribers = append(c.Subscribers, make(chan bool))
-	}
-
 	c.file = defaultConfig
-	c.updateVersion(DONT_NOTIFY)
 	if _, err := os.Stat(activeConfig); err == nil {
 		c.file = activeConfig
 	}
-
 	err := configor.Load(&c.Cfg, c.file)
 	if err != nil {
 		log.Fatal("Configuration error: ", err)
 	}
-
 	c.file = activeConfig
+
+	for i := 0; i < numberOfSubs; i++ {
+		c.Subscribers = append(c.Subscribers, make(chan bool))
+	}
+	c.updateVersion(DONT_NOTIFY)
 	c.persistToFile()
 
 	return c
