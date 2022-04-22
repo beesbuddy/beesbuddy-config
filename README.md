@@ -15,9 +15,8 @@ type ConfigType struct {
 If you have modules which needs to be notified on config change, create similar enum:
 ```
 type ConfigSubscriber int
-
 const (
-	ONE_SUB ConfigSubscriber = iota
+	FIRST_SUB ConfigSubscriber = iota
 	SECOND_SUB
 	NUMBER_OF_SUBS
 )
@@ -27,11 +26,12 @@ Initialize and use config:
 ```
 config := config.NewConfig[ConfigType](int(NUMBER_OF_SUBS))
 
-config.Cfg // access to current config
-config.UpdateConfig({newConfig}) // update current config on the fly
+cfg := config.Cfg // access current config attributes
+cfg.AppName = "NewName"
+config.UpdateConfig(cfg) // update current config on the fly
 ```
 
-Implement waiting goroutine for config change in your modules:
+Implement waiting goroutine for config change on the fly in your modules:
 ```
 _ = <-config.Subscribers[SECOND_SUB]
 ```
