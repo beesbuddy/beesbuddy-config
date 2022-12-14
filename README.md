@@ -19,6 +19,7 @@ If you have modules which needs to be notified on config change, create similar 
 
 ```go
 type ConfigSubscriber int
+
 const (
  FIRST_SUB ConfigSubscriber = iota
  SECOND_SUB
