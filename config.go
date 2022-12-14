@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -11,11 +12,12 @@ import (
 )
 
 var (
-	defaultConfig = "app_config.default.json"
+	defaultConfig = "app_config.json"
 	activeConfig  = "app_config.active.json"
 )
 
 type Data[T any] struct {
+	path        string `default:"."`
 	file        string
 	Timestamp   string
 	Cfg         T
@@ -37,20 +39,24 @@ const (
 
 func NewConfig[T any](numberOfSubs int) *Data[T] {
 	c := new(Data[T])
+	c.file = filepath.Join(c.path, defaultConfig)
 
-	c.file = defaultConfig
 	if _, err := os.Stat(activeConfig); err == nil {
 		c.file = activeConfig
 	}
+
 	err := configor.Load(&c.Cfg, c.file)
+
 	if err != nil {
 		log.Fatal("Configuration error: ", err)
 	}
+
 	c.file = activeConfig
 
 	for i := 0; i < numberOfSubs; i++ {
 		c.Subscribers = append(c.Subscribers, make(chan bool))
 	}
+
 	c.updateVersion(DONT_NOTIFY)
 	c.persistToFile()
 
