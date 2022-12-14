@@ -1,6 +1,6 @@
-module github.com/tableassistant/config
+module github.com/beesbuddy/beesbuddy-config
 
-go 1.18
+go 1.19
 
 require github.com/jinzhu/configor v1.2.1
 
