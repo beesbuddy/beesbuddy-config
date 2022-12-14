@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -28,6 +27,12 @@ type Notify int
 const (
 	SHOULD_NOTIFY Notify = iota
 	DONT_NOTIFY
+)
+
+const (
+	MARSHAL_IDENT      = "	"
+	EMPTY_SPACE        = ""
+	RW_RW_R_PERMISSION = 0664
 )
 
 func NewConfig[T any](numberOfSubs int) *Data[T] {
@@ -68,6 +73,6 @@ func (c *Data[T]) updateVersion(n Notify) {
 }
 
 func (c *Data[T]) persistToFile() {
-	file, _ := json.MarshalIndent(c.Cfg, "", "	")
-	_ = ioutil.WriteFile(c.file, file, 0644)
+	file, _ := json.MarshalIndent(c.Cfg, EMPTY_SPACE, MARSHAL_IDENT)
+	_ = os.WriteFile(c.file, file, RW_RW_R_PERMISSION)
 }
