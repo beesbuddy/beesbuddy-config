@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	defaultConfig = "app_config.json"
-	activeConfig  = "app_config.active.json"
+	defaultConfig = "app_config.initial.json"
+	activeConfig  = "app_config.json"
 )
 
 type Data[T any] struct {
