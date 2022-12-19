@@ -28,7 +28,7 @@ const (
 	RW_RW_R_PERMISSION = 0664
 )
 
-func Init[T any](numberOfSubs int) (*config[T], error) {
+func Init[T any]() (*config[T], error) {
 	c := &config[T]{}
 
 	activeFileExists := fileExists(activeConfig)
@@ -48,10 +48,6 @@ func Init[T any](numberOfSubs int) (*config[T], error) {
 	}
 
 	c.updateTimestamp()
-
-	for i := 0; i < numberOfSubs; i++ {
-		c.subscribers = append(c.subscribers, make(chan bool, 1))
-	}
 
 	// create active config file if needed
 	if !activeFileExists {
@@ -133,6 +129,10 @@ func (c *config[T]) GetSubscriber(i int) *chan bool {
 		return &c.subscribers[i]
 	}
 	return nil
+}
+
+func (c *config[T]) AddSubscriber() {
+	c.subscribers = append(c.subscribers, make(chan bool, 1))
 }
 
 func (c *config[T]) GetTimestamp() string {

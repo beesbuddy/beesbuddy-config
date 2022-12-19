@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -18,14 +17,18 @@ var testData = TestConfig{"config_test", 123}
 const testString = "{\"name\":\"config_test\",\"version\":123}"
 
 func setUp(file string, data string, subs int) (*config[TestConfig], error) {
-	err := ioutil.WriteFile(file, []byte(data), 0644)
+	err := os.WriteFile(file, []byte(data), 0644)
 	if err != nil {
 		return nil, err
 	}
 
-	c, err := Init[TestConfig](subs)
+	c, err := Init[TestConfig]()
 	if err != nil {
 		return nil, err
+	}
+
+	for i := 0; i < subs; i++ {
+		c.AddSubscriber()
 	}
 
 	return c, nil
@@ -38,7 +41,7 @@ func cleanUp() {
 
 func Test_Init(t *testing.T) {
 	t.Run("No configuration files", func(t *testing.T) {
-		_, err := Init[TestConfig](0)
+		_, err := Init[TestConfig]()
 		if err == nil {
 			t.Errorf("Error is not returned unexpectedly")
 		}
