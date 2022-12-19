@@ -2,34 +2,25 @@ package config
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
-
-	"github.com/jinzhu/configor"
 )
 
 var (
-	defaultConfig = "app_config.initial.json"
+	initialConfig = "app_config.initial.json"
 	activeConfig  = "app_config.json"
 )
 
-type Data[T any] struct {
+type config[T any] struct {
 	path        string `default:"."`
-	file        string
-	Timestamp   string
-	Cfg         T
-	Subscribers []chan bool
+	activeFile  string
+	cfg         T
+	subscribers []chan bool
+	timestamp   string
 }
-
-type Notify int
-
-const (
-	SHOULD_NOTIFY Notify = iota
-	DONT_NOTIFY
-)
 
 const (
 	MARSHAL_IDENT      = "	"
@@ -37,48 +28,121 @@ const (
 	RW_RW_R_PERMISSION = 0664
 )
 
-func NewConfig[T any](numberOfSubs int) *Data[T] {
-	c := new(Data[T])
-	c.file = filepath.Join(c.path, defaultConfig)
+func Init[T any](numberOfSubs int) (*config[T], error) {
+	c := &config[T]{}
 
-	if _, err := os.Stat(activeConfig); err == nil {
-		c.file = activeConfig
+	activeFileExists := fileExists(activeConfig)
+	defaultFileExists := fileExists(initialConfig)
+
+	if activeFileExists {
+		c.activeFile = filepath.Join(c.path, activeConfig)
+	} else if defaultFileExists {
+		c.activeFile = filepath.Join(c.path, initialConfig)
+	} else {
+		return nil, fmt.Errorf("no configuration files found")
 	}
 
-	err := configor.Load(&c.Cfg, c.file)
-
+	err := c.load()
 	if err != nil {
-		log.Fatal("Configuration error: ", err)
+		return nil, fmt.Errorf("failed at load from file: %v", err)
 	}
 
-	c.file = activeConfig
+	c.updateTimestamp()
 
 	for i := 0; i < numberOfSubs; i++ {
-		c.Subscribers = append(c.Subscribers, make(chan bool))
+		c.subscribers = append(c.subscribers, make(chan bool, 1))
 	}
 
-	c.updateVersion(DONT_NOTIFY)
-	c.persistToFile()
-
-	return c
-}
-
-func (c *Data[T]) UpdateConfig(newConfig T) {
-	c.Cfg = newConfig
-	c.persistToFile()
-	c.updateVersion(SHOULD_NOTIFY)
-}
-
-func (c *Data[T]) updateVersion(n Notify) {
-	c.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	if n == SHOULD_NOTIFY {
-		for i := 0; i < len(c.Subscribers); i++ {
-			c.Subscribers[i] <- true
+	// create active config file if needed
+	if !activeFileExists {
+		c.activeFile = activeConfig
+		err = c.persist()
+		if err != nil {
+			return nil, err
 		}
 	}
+
+	return c, nil
 }
 
-func (c *Data[T]) persistToFile() {
-	file, _ := json.MarshalIndent(c.Cfg, EMPTY_SPACE, MARSHAL_IDENT)
-	_ = os.WriteFile(c.file, file, RW_RW_R_PERMISSION)
+func (c *config[T]) updateTimestamp() {
+	c.timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+}
+
+func (c *config[T]) Update(newConfig T) error {
+	c.cfg = newConfig
+
+	err := c.persist()
+
+	if err != nil {
+		return err
+	}
+
+	c.updateTimestamp()
+
+	// notify subscribers
+	for i := 0; i < len(c.subscribers); i++ {
+		if len(c.subscribers[i]) != 0 {
+			continue
+		}
+		c.subscribers[i] <- true
+	}
+	return nil
+}
+
+func (c *config[T]) persist() error {
+	file, err := json.MarshalIndent(c.cfg, EMPTY_SPACE, MARSHAL_IDENT)
+
+	if err != nil {
+		return fmt.Errorf("failed at marshal json: %v", err)
+	}
+
+	err = os.WriteFile(c.activeFile, file, RW_RW_R_PERMISSION)
+
+	if err != nil {
+		return fmt.Errorf("failed at write to file: %v", err)
+	}
+
+	return nil
+}
+
+func (c *config[T]) load() error {
+	configFile, err := os.Open(c.activeFile)
+	if err != nil {
+		return err
+	}
+
+	jsonParser := json.NewDecoder(configFile)
+	if err = jsonParser.Decode(&c.cfg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func fileExists(filename string) bool {
+	if _, err := os.Stat(filename); err == nil {
+		return true
+	}
+
+	return false
+}
+
+func (c *config[T]) GetSubscriber(i int) *chan bool {
+	if i < len(c.subscribers) {
+		return &c.subscribers[i]
+	}
+	return nil
+}
+
+func (c *config[T]) GetTimestamp() string {
+	return c.timestamp
+}
+
+func (c *config[T]) GetSubscribers() []chan bool {
+	return c.subscribers
+}
+
+func (c *config[T]) GetCfg() *T {
+	return &c.cfg
 }
