@@ -16,7 +16,7 @@ var testData = TestConfig{"config_test", 123}
 
 const testString = "{\"name\":\"config_test\",\"version\":123}"
 
-func setUp(file string, data string, subs int) (*config[TestConfig], error) {
+func setUp(file string, data string, subscribers []string) (*config[TestConfig], error) {
 	err := os.WriteFile(file, []byte(data), 0644)
 	if err != nil {
 		return nil, err
@@ -27,8 +27,8 @@ func setUp(file string, data string, subs int) (*config[TestConfig], error) {
 		return nil, err
 	}
 
-	for i := 0; i < subs; i++ {
-		c.AddSubscriber()
+	for _, subscriber := range subscribers {
+		c.AddSubscriber(subscriber)
 	}
 
 	return c, nil
@@ -48,7 +48,8 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check loaded config data", func(t *testing.T) {
-		c, err := setUp(initialConfig, testString, 0)
+		c, err := setUp(initialConfig, testString, []string{})
+
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -64,7 +65,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check loaded config data from active config", func(t *testing.T) {
-		c, err := setUp(activeConfig, testString, 0)
+		c, err := setUp(activeConfig, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -79,7 +80,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Create active config file", func(t *testing.T) {
-		_, err := setUp(initialConfig, testString, 0)
+		_, err := setUp(initialConfig, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -93,7 +94,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check active config file content", func(t *testing.T) {
-		_, err := setUp(initialConfig, testString, 0)
+		_, err := setUp(initialConfig, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -120,7 +121,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check timestamp is created", func(t *testing.T) {
-		c, err := setUp(initialConfig, testString, 0)
+		c, err := setUp(initialConfig, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -133,29 +134,32 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check subscribers being created", func(t *testing.T) {
-		const NUM_OF_SUBS = 5
-		c, err := setUp(initialConfig, testString, NUM_OF_SUBS)
+		subscribers := [5]string{"test1", "test2", "test3", "test4", "test5"}
+
+		c, err := setUp(initialConfig, testString, subscribers[:])
+
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
 		}
+
 		defer cleanUp()
 
-		if len(c.subscribers) != NUM_OF_SUBS {
+		if len(c.subscribers) != len(subscribers) {
 			t.Error("Expected number of subscribers is not correct")
 		}
 	})
 
 	t.Run("Check subscribers not being notified", func(t *testing.T) {
-		const NUM_OF_SUBS = 1
-		c, err := setUp(initialConfig, testString, NUM_OF_SUBS)
+		subscribers := [5]string{"test1"}
+		c, err := setUp(initialConfig, testString, subscribers[:])
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
 		}
 		defer cleanUp()
 
-		if len(*c.GetSubscriber(0)) != 0 {
+		if len(c.GetSubscriber("test1")) != 0 {
 			t.Error("Subscribers has been notified")
 		}
 	})
@@ -165,7 +169,7 @@ func Test_Update(t *testing.T) {
 	newData := TestConfig{"new_data", 456}
 
 	t.Run("Check if config is updated", func(t *testing.T) {
-		c, err := setUp(initialConfig, testString, 0)
+		c, err := setUp(initialConfig, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -182,33 +186,40 @@ func Test_Update(t *testing.T) {
 	})
 
 	t.Run("Check if subscribers are being notified", func(t *testing.T) {
-		c, err := setUp(initialConfig, testString, 3)
+		subscribers := [5]string{"test1", "test2", "test3"}
+
+		c, err := setUp(initialConfig, testString, subscribers[:])
+
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
 		}
+
 		defer cleanUp()
 
 		c.Update(newData)
 
-		if len(c.subscribers[0]) != 1 || len(c.subscribers[1]) != 1 || len(c.subscribers[2]) != 1 {
+		if len(c.subscribers["test1"]) != 1 || len(c.subscribers["test2"]) != 1 || len(c.subscribers["test3"]) != 1 {
 			t.Error("Subscribers not being notified")
 		}
 	})
 
 	t.Run("Check if channels not being overloaded", func(t *testing.T) {
-		c, err := setUp(initialConfig, testString, 1)
+		subscribers := [1]string{"test1"}
+		c, err := setUp(initialConfig, testString, subscribers[:])
+
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
 		}
+
 		defer cleanUp()
 
 		c.Update(newData)
 		c.Update(newData)
 		c.Update(newData)
 
-		if len(c.subscribers[0]) != 1 {
+		if len(c.subscribers["test1"]) != 1 {
 			t.Error("Subscribers not being notified")
 		}
 	})

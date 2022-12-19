@@ -18,7 +18,7 @@ type config[T any] struct {
 	path        string `default:"."`
 	activeFile  string
 	cfg         T
-	subscribers []chan bool
+	subscribers map[string](chan bool)
 	timestamp   string
 }
 
@@ -30,6 +30,7 @@ const (
 
 func Init[T any]() (*config[T], error) {
 	c := &config[T]{}
+	c.subscribers = make(map[string]chan bool)
 
 	activeFileExists := fileExists(activeConfig)
 	defaultFileExists := fileExists(initialConfig)
@@ -49,7 +50,6 @@ func Init[T any]() (*config[T], error) {
 
 	c.updateTimestamp()
 
-	// create active config file if needed
 	if !activeFileExists {
 		c.activeFile = activeConfig
 		err = c.persist()
@@ -76,13 +76,15 @@ func (c *config[T]) Update(newConfig T) error {
 
 	c.updateTimestamp()
 
-	// notify subscribers
-	for i := 0; i < len(c.subscribers); i++ {
-		if len(c.subscribers[i]) != 0 {
+	for _, channel := range c.subscribers {
+		// Do not notify subscriber through channel if it was aleady notified
+		if len(channel) != 0 {
 			continue
 		}
-		c.subscribers[i] <- true
+
+		channel <- true
 	}
+
 	return nil
 }
 
@@ -124,22 +126,19 @@ func fileExists(filename string) bool {
 	return false
 }
 
-func (c *config[T]) GetSubscriber(i int) *chan bool {
-	if i < len(c.subscribers) {
-		return &c.subscribers[i]
-	}
-	return nil
+func (c *config[T]) GetSubscriber(key string) chan bool {
+	return c.subscribers[key]
 }
 
-func (c *config[T]) AddSubscriber() {
-	c.subscribers = append(c.subscribers, make(chan bool, 1))
+func (c *config[T]) AddSubscriber(key string) {
+	c.subscribers[key] = make(chan bool, 1)
 }
 
 func (c *config[T]) GetTimestamp() string {
 	return c.timestamp
 }
 
-func (c *config[T]) GetSubscribers() []chan bool {
+func (c *config[T]) GetSubscribers() map[string](chan bool) {
 	return c.subscribers
 }
 
