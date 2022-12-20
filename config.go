@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,7 @@ var (
 )
 
 type config[T any] struct {
+	mu          sync.Mutex
 	activeFile  string
 	cfg         T
 	subscribers map[string](chan bool)
@@ -88,6 +90,9 @@ func (c *config[T]) Update(newConfig T) error {
 }
 
 func (c *config[T]) persist() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	file, err := json.MarshalIndent(c.cfg, EMPTY_SPACE, MARSHAL_INDENT)
 
 	if err != nil {
@@ -104,7 +109,11 @@ func (c *config[T]) persist() error {
 }
 
 func (c *config[T]) load() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	configFile, err := os.Open(c.activeFile)
+
 	if err != nil {
 		return err
 	}
@@ -126,21 +135,31 @@ func fileExists(filename string) bool {
 }
 
 func (c *config[T]) GetSubscriber(key string) chan bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.subscribers[key]
 }
 
 func (c *config[T]) AddSubscriber(key string) {
+	c.mu.Lock()
 	c.subscribers[key] = make(chan bool, 1)
+	c.mu.Unlock()
+}
+
+func (c *config[T]) RemoveSubscriber(key string) {
+	c.mu.Lock()
+	delete(c.subscribers, key)
+	c.mu.Unlock()
 }
 
 func (c *config[T]) GetTimestamp() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.timestamp
 }
 
-func (c *config[T]) GetSubscribers() map[string](chan bool) {
-	return c.subscribers
-}
-
 func (c *config[T]) GetCfg() *T {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return &c.cfg
 }
