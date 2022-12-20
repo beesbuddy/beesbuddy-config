@@ -26,7 +26,7 @@ func setUp(file string, data string, subscribers []string) (*config[TestConfig],
 		return nil, err
 	}
 
-	c, err := Init[TestConfig](CONFIG_NAME)
+	c, err := Init[TestConfig](WithName(CONFIG_NAME))
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func cleanUp() {
 
 func Test_Init(t *testing.T) {
 	t.Run("No configuration files", func(t *testing.T) {
-		_, err := Init[TestConfig](CONFIG_NAME)
+		_, err := Init[TestConfig](WithName(CONFIG_NAME))
 		if err == nil {
 			t.Errorf("Error is not returned unexpectedly")
 		}

@@ -28,11 +28,32 @@ const (
 	RW_RW_R_PERMISSION = 0664
 )
 
-func Init[T any](name string) (*config[T], error) {
+type Optional struct {
+	Name string
+}
+
+type Option func(f *Optional)
+
+func WithName(name string) Option {
+	return func(o *Optional) {
+		o.Name = name
+	}
+}
+
+func Init[T any](opts ...Option) (*config[T], error) {
 	c := &config[T]{}
+
+	optional := &Optional{
+		Name: "app",
+	}
+
+	for _, opt := range opts {
+		opt(optional)
+	}
+
 	c.subscribers = make(map[string]chan bool)
-	activeConfigFilename := fmt.Sprintf(activeConfig, name)
-	defaultConfigFilename := fmt.Sprintf(defaultConfig, name)
+	activeConfigFilename := fmt.Sprintf(activeConfig, optional.Name)
+	defaultConfigFilename := fmt.Sprintf(defaultConfig, optional.Name)
 	activeFileExists := fileExists(activeConfigFilename)
 	defaultFileExists := fileExists(defaultConfigFilename)
 
