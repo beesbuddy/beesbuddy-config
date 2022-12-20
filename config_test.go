@@ -39,8 +39,8 @@ func setUp(file string, data string, subscribers []string) (*config[TestConfig],
 }
 
 func cleanUp() {
-	os.Remove(fmt.Sprintf(defaultConfig, CONFIG_NAME))
-	os.Remove(fmt.Sprintf(activeConfig, CONFIG_NAME))
+	os.Remove(fmt.Sprintf(DEFAULT_CONFIG, CONFIG_NAME))
+	os.Remove(fmt.Sprintf(ACTIVE_CONFIG, CONFIG_NAME))
 }
 
 func Test_Init(t *testing.T) {
@@ -52,7 +52,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check loaded config data", func(t *testing.T) {
-		c, err := setUp(activeConfig, testString, []string{})
+		c, err := setUp(ACTIVE_CONFIG, testString, []string{})
 
 		if err != nil {
 			t.Error("Error while setting up test")
@@ -69,7 +69,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check loaded config data from active config", func(t *testing.T) {
-		c, err := setUp(activeConfig, testString, []string{})
+		c, err := setUp(ACTIVE_CONFIG, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -84,21 +84,21 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Create active config file", func(t *testing.T) {
-		_, err := setUp(activeConfig, testString, []string{})
+		_, err := setUp(ACTIVE_CONFIG, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
 		}
 		defer cleanUp()
 
-		if !fileExists(fmt.Sprintf(activeConfig, CONFIG_NAME)) {
+		if !fileExists(fmt.Sprintf(ACTIVE_CONFIG, CONFIG_NAME)) {
 			t.Error("Expected active config file to be created, but it does not exist")
 		}
-		os.Remove(fmt.Sprintf(activeConfig, CONFIG_NAME))
+		os.Remove(fmt.Sprintf(ACTIVE_CONFIG, CONFIG_NAME))
 	})
 
 	t.Run("Check active config file content", func(t *testing.T) {
-		_, err := setUp(defaultConfig, testString, []string{})
+		_, err := setUp(DEFAULT_CONFIG, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -106,7 +106,7 @@ func Test_Init(t *testing.T) {
 		defer cleanUp()
 
 		fileContent := TestConfig{}
-		configFile, err := os.Open(fmt.Sprintf(activeConfig, CONFIG_NAME))
+		configFile, err := os.Open(fmt.Sprintf(ACTIVE_CONFIG, CONFIG_NAME))
 		if err != nil {
 			t.Error("Opening activeConfig file", err.Error())
 		}
@@ -125,7 +125,7 @@ func Test_Init(t *testing.T) {
 	})
 
 	t.Run("Check timestamp is created", func(t *testing.T) {
-		c, err := setUp(defaultConfig, testString, []string{})
+		c, err := setUp(DEFAULT_CONFIG, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -140,7 +140,7 @@ func Test_Init(t *testing.T) {
 	t.Run("Check subscribers being created", func(t *testing.T) {
 		subscribers := [5]string{"test1", "test2", "test3", "test4", "test5"}
 
-		c, err := setUp(defaultConfig, testString, subscribers[:])
+		c, err := setUp(DEFAULT_CONFIG, testString, subscribers[:])
 
 		if err != nil {
 			t.Error("Error while setting up test")
@@ -156,7 +156,7 @@ func Test_Init(t *testing.T) {
 
 	t.Run("Check subscribers not being notified", func(t *testing.T) {
 		subscribers := [5]string{"test1"}
-		c, err := setUp(defaultConfig, testString, subscribers[:])
+		c, err := setUp(DEFAULT_CONFIG, testString, subscribers[:])
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -173,7 +173,7 @@ func Test_Update(t *testing.T) {
 	newData := TestConfig{"new_data", 456}
 
 	t.Run("Check if config is updated", func(t *testing.T) {
-		c, err := setUp(defaultConfig, testString, []string{})
+		c, err := setUp(DEFAULT_CONFIG, testString, []string{})
 		if err != nil {
 			t.Error("Error while setting up test")
 			t.FailNow()
@@ -192,7 +192,7 @@ func Test_Update(t *testing.T) {
 	t.Run("Check if subscribers are being notified", func(t *testing.T) {
 		subscribers := [5]string{"test1", "test2", "test3"}
 
-		c, err := setUp(defaultConfig, testString, subscribers[:])
+		c, err := setUp(DEFAULT_CONFIG, testString, subscribers[:])
 
 		if err != nil {
 			t.Error("Error while setting up test")
@@ -210,7 +210,7 @@ func Test_Update(t *testing.T) {
 
 	t.Run("Check if channels not being overloaded", func(t *testing.T) {
 		subscribers := [1]string{"test1"}
-		c, err := setUp(defaultConfig, testString, subscribers[:])
+		c, err := setUp(DEFAULT_CONFIG, testString, subscribers[:])
 
 		if err != nil {
 			t.Error("Error while setting up test")

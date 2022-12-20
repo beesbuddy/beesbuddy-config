@@ -10,11 +10,6 @@ import (
 	"time"
 )
 
-const (
-	defaultConfig = "%s.defualt.json"
-	activeConfig  = "%s.json"
-)
-
 type config[T any] struct {
 	mu          sync.Mutex
 	activeFile  string
@@ -24,6 +19,8 @@ type config[T any] struct {
 }
 
 const (
+	DEFAULT_CONFIG     = "%s.default.json"
+	ACTIVE_CONFIG      = "%s.json"
 	MARSHAL_INDENT     = "	"
 	EMPTY_SPACE        = ""
 	RW_RW_R_PERMISSION = 0664
@@ -58,8 +55,8 @@ func Init[T any](opts ...Option) (*config[T], error) {
 	}
 
 	c.subscribers = make(map[string]chan bool)
-	activeConfigFilename := filepath.Join(workDir, fmt.Sprintf(activeConfig, optional.Name))
-	defaultConfigFilename := filepath.Join(workDir, fmt.Sprintf(defaultConfig, optional.Name))
+	activeConfigFilename := filepath.Join(workDir, fmt.Sprintf(ACTIVE_CONFIG, optional.Name))
+	defaultConfigFilename := filepath.Join(workDir, fmt.Sprintf(DEFAULT_CONFIG, optional.Name))
 	activeFileExists := fileExists(activeConfigFilename)
 	defaultFileExists := fileExists(defaultConfigFilename)
 
