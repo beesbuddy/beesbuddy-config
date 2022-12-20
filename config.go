@@ -4,18 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 )
 
 var (
-	initialConfig = "app_config.initial.json"
-	activeConfig  = "app_config.json"
+	defaultConfig = "%s.defualt.json"
+	activeConfig  = "%s.json"
 )
 
 type config[T any] struct {
-	path        string `default:"."`
 	activeFile  string
 	cfg         T
 	subscribers map[string](chan bool)
@@ -28,17 +26,18 @@ const (
 	RW_RW_R_PERMISSION = 0664
 )
 
-func Init[T any]() (*config[T], error) {
+func Init[T any](name string) (*config[T], error) {
 	c := &config[T]{}
 	c.subscribers = make(map[string]chan bool)
-
-	activeFileExists := fileExists(activeConfig)
-	defaultFileExists := fileExists(initialConfig)
+	activeConfigFilename := fmt.Sprintf(activeConfig, name)
+	defaultConfigFilename := fmt.Sprintf(defaultConfig, name)
+	activeFileExists := fileExists(activeConfigFilename)
+	defaultFileExists := fileExists(defaultConfigFilename)
 
 	if activeFileExists {
-		c.activeFile = filepath.Join(c.path, activeConfig)
+		c.activeFile = activeConfigFilename
 	} else if defaultFileExists {
-		c.activeFile = filepath.Join(c.path, initialConfig)
+		c.activeFile = defaultConfigFilename
 	} else {
 		return nil, fmt.Errorf("no configuration files found")
 	}
@@ -51,7 +50,7 @@ func Init[T any]() (*config[T], error) {
 	c.updateTimestamp()
 
 	if !activeFileExists {
-		c.activeFile = activeConfig
+		c.activeFile = activeConfigFilename
 		err = c.persist()
 		if err != nil {
 			return nil, err
