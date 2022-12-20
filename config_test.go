@@ -45,7 +45,7 @@ func cleanUp() {
 
 func Test_Init(t *testing.T) {
 	t.Run("No configuration files", func(t *testing.T) {
-		_, err := Init[TestConfig](WithName(CONFIG_NAME))
+		_, err := Init[TestConfig](WithName("not_exist"))
 		if err == nil {
 			t.Errorf("Error is not returned unexpectedly")
 		}

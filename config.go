@@ -10,10 +10,9 @@ import (
 	"time"
 )
 
-var (
+const (
 	defaultConfig = "%s.defualt.json"
 	activeConfig  = "%s.json"
-	rootPath      = "."
 )
 
 type config[T any] struct {
@@ -43,6 +42,11 @@ func WithName(name string) Option {
 }
 
 func Init[T any](opts ...Option) (*config[T], error) {
+	workDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
 	c := &config[T]{}
 
 	optional := &Optional{
@@ -54,8 +58,8 @@ func Init[T any](opts ...Option) (*config[T], error) {
 	}
 
 	c.subscribers = make(map[string]chan bool)
-	activeConfigFilename := filepath.Join(rootPath, fmt.Sprintf(activeConfig, optional.Name))
-	defaultConfigFilename := filepath.Join(rootPath, fmt.Sprintf(defaultConfig, optional.Name))
+	activeConfigFilename := filepath.Join(workDir, fmt.Sprintf(activeConfig, optional.Name))
+	defaultConfigFilename := filepath.Join(workDir, fmt.Sprintf(defaultConfig, optional.Name))
 	activeFileExists := fileExists(activeConfigFilename)
 	defaultFileExists := fileExists(defaultConfigFilename)
 
@@ -67,7 +71,7 @@ func Init[T any](opts ...Option) (*config[T], error) {
 		return nil, fmt.Errorf("no configuration files found")
 	}
 
-	err := c.load()
+	err = c.load()
 	if err != nil {
 		return nil, fmt.Errorf("failed at load from file: %v", err)
 	}
