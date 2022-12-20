@@ -23,7 +23,7 @@ type config[T any] struct {
 }
 
 const (
-	MARSHAL_IDENT      = "	"
+	MARSHAL_INDENT     = "	"
 	EMPTY_SPACE        = ""
 	RW_RW_R_PERMISSION = 0664
 )
@@ -89,7 +89,7 @@ func (c *config[T]) Update(newConfig T) error {
 }
 
 func (c *config[T]) persist() error {
-	file, err := json.MarshalIndent(c.cfg, EMPTY_SPACE, MARSHAL_IDENT)
+	file, err := json.MarshalIndent(c.cfg, EMPTY_SPACE, MARSHAL_INDENT)
 
 	if err != nil {
 		return fmt.Errorf("failed at marshal json: %v", err)
