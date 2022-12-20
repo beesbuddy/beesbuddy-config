@@ -44,7 +44,7 @@ func Init[T any](opts ...Option) (*config[T], error) {
 	c := &config[T]{}
 
 	optional := &Optional{
-		Name: "app",
+		Name: "app", // Default configuration name for application
 	}
 
 	for _, opt := range opts {
@@ -99,7 +99,7 @@ func (c *config[T]) Update(newConfig T) error {
 	c.updateTimestamp()
 
 	for _, channel := range c.subscribers {
-		// Do not notify subscriber through channel if it was aleady notified
+		// Do not notify subscriber through channel if it was already notified
 		if len(channel) != 0 {
 			continue
 		}
