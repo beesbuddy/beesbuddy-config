@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -12,6 +13,7 @@ import (
 var (
 	defaultConfig = "%s.defualt.json"
 	activeConfig  = "%s.json"
+	rootPath      = "."
 )
 
 type config[T any] struct {
@@ -52,8 +54,8 @@ func Init[T any](opts ...Option) (*config[T], error) {
 	}
 
 	c.subscribers = make(map[string]chan bool)
-	activeConfigFilename := fmt.Sprintf(activeConfig, optional.Name)
-	defaultConfigFilename := fmt.Sprintf(defaultConfig, optional.Name)
+	activeConfigFilename := filepath.Join(rootPath, fmt.Sprintf(activeConfig, optional.Name))
+	defaultConfigFilename := filepath.Join(rootPath, fmt.Sprintf(defaultConfig, optional.Name))
 	activeFileExists := fileExists(activeConfigFilename)
 	defaultFileExists := fileExists(defaultConfigFilename)
 
