@@ -4,8 +4,9 @@ Configuration module based on [configor](https://github.com/jinzhu/configor) too
 
 ## How to use
 
-Write config structure of your app. Actual config should be placed in root folder named `app_config.default.json`
-Example:
+Initial config that will store configuration information should be placed in root folder named `app_config.initial.json`. Write config structure of your app.
+
+Example of config structure:
 
 ```go
 type ConfigType struct {
@@ -15,31 +16,25 @@ type ConfigType struct {
 }
 ```
 
-If you have modules which needs to be notified on config change, create similar enum:
-
-```go
-type ConfigSubscriber int
-
-const (
- FIRST_SUB ConfigSubscriber = iota
- SECOND_SUB
- NUMBER_OF_SUBS
-)
-```
-
 Initialize and use config:
 
 ```go
-config := config.NewConfig[ConfigType](int(NUMBER_OF_SUBS))
-
-cfg := config.Cfg // access current config attributes
+config := config.NewConfig[ConfigType]()
+// access current configuration attributes
+cfg := config.GetCfg()
 cfg.AppName = "NewName"
-config.UpdateConfig(cfg) // update current config on the fly
+// update current configuration
+config.UpdateConfig(cfg)
+```
+
+If you have modules which needs to be notified on config change, add a listener/subscriber:
+
+```go
+c.AddSubscriber("name_of_subscriber")
 ```
 
 Implement waiting goroutine for config change on the fly in your modules:
 
 ```go
-_ = <-config.Subscribers[SECOND_SUB]
-
+_ = <-config.GetSubscriber("name_of_subscriber")
 ```
