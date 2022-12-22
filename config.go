@@ -28,6 +28,7 @@ const (
 
 type Optional struct {
 	Name string
+	Path string
 }
 
 type Option func(f *Optional)
@@ -35,6 +36,12 @@ type Option func(f *Optional)
 func WithName(name string) Option {
 	return func(o *Optional) {
 		o.Name = name
+	}
+}
+
+func WithPath(path string) Option {
+	return func(o *Optional) {
+		o.Path = path
 	}
 }
 
@@ -47,7 +54,8 @@ func Init[T any](opts ...Option) (*config[T], error) {
 	c := &config[T]{}
 
 	optional := &Optional{
-		Name: "app", // Default configuration name for application
+		Name: "app",   // Default configuration name for application
+		Path: workDir, // Default configuration path
 	}
 
 	for _, opt := range opts {
