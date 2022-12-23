@@ -19,7 +19,7 @@ const CONFIG_NAME = "test"
 
 const testString = "{\"name\":\"config_test\",\"version\":123}"
 
-func setUp(file string, data string, subscribers []string) (*config[TestConfig], error) {
+func setUp(file string, data string, subscribers []string) (*Config[TestConfig], error) {
 	err := os.WriteFile(fmt.Sprintf(file, CONFIG_NAME), []byte(data), RW_RW_R_PERMISSION)
 
 	if err != nil {

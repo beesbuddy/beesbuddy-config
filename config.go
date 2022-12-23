@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-type config[T any] struct {
+type Config[T any] struct {
 	mu          sync.Mutex
 	activeFile  string
-	cfg         T
+	data        T
 	subscribers map[string](chan bool)
 	timestamp   string
 }
@@ -45,13 +45,13 @@ func WithPath(path string) Option {
 	}
 }
 
-func Init[T any](opts ...Option) (*config[T], error) {
+func Init[T any](opts ...Option) (*Config[T], error) {
 	workDir, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 
-	c := &config[T]{}
+	c := &Config[T]{}
 
 	optional := &Optional{
 		Name: "app",   // Default configuration name for application
@@ -94,12 +94,12 @@ func Init[T any](opts ...Option) (*config[T], error) {
 	return c, nil
 }
 
-func (c *config[T]) updateTimestamp() {
+func (c *Config[T]) updateTimestamp() {
 	c.timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 }
 
-func (c *config[T]) Update(newConfig T) error {
-	c.cfg = newConfig
+func (c *Config[T]) Update(newConfig T) error {
+	c.data = newConfig
 
 	err := c.persist()
 
@@ -121,11 +121,11 @@ func (c *config[T]) Update(newConfig T) error {
 	return nil
 }
 
-func (c *config[T]) persist() error {
+func (c *Config[T]) persist() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	file, err := json.MarshalIndent(c.cfg, EMPTY_SPACE, MARSHAL_INDENT)
+	file, err := json.MarshalIndent(c.data, EMPTY_SPACE, MARSHAL_INDENT)
 
 	if err != nil {
 		return fmt.Errorf("failed at marshal json: %v", err)
@@ -140,7 +140,7 @@ func (c *config[T]) persist() error {
 	return nil
 }
 
-func (c *config[T]) load() error {
+func (c *Config[T]) load() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -151,7 +151,7 @@ func (c *config[T]) load() error {
 	}
 
 	jsonParser := json.NewDecoder(configFile)
-	if err = jsonParser.Decode(&c.cfg); err != nil {
+	if err = jsonParser.Decode(&c.data); err != nil {
 		return err
 	}
 
@@ -166,32 +166,32 @@ func fileExists(filename string) bool {
 	return false
 }
 
-func (c *config[T]) GetSubscriber(key string) chan bool {
+func (c *Config[T]) GetSubscriber(key string) chan bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.subscribers[key]
 }
 
-func (c *config[T]) AddSubscriber(key string) {
+func (c *Config[T]) AddSubscriber(key string) {
 	c.mu.Lock()
 	c.subscribers[key] = make(chan bool, 1)
 	c.mu.Unlock()
 }
 
-func (c *config[T]) RemoveSubscriber(key string) {
+func (c *Config[T]) RemoveSubscriber(key string) {
 	c.mu.Lock()
 	delete(c.subscribers, key)
 	c.mu.Unlock()
 }
 
-func (c *config[T]) GetTimestamp() string {
+func (c *Config[T]) GetTimestamp() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.timestamp
 }
 
-func (c *config[T]) GetCfg() *T {
+func (c *Config[T]) GetCfg() *T {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return &c.cfg
+	return &c.data
 }
