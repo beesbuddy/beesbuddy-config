@@ -4,13 +4,13 @@ Configuration module based on [configor](https://github.com/jinzhu/configor) too
 
 ## How to use
 
-Initial config that will store configuration information should be placed in root folder named `app_config.initial.json`. Write config structure of your app.
+Initial config that will store configuration information should be placed in root folder named `app.default.json`. Write config structure of your app.
 
 Example of config structure:
 
 ```go
 type ConfigType struct {
- AppName   string `default:"worker"`
+ AppName   string `default:"app"`
  Version   string `default:"1"`
  Prefork   bool   `default:"false"`
 }
@@ -19,7 +19,7 @@ type ConfigType struct {
 Initialize and use config:
 
 ```go
-config := config.NewConfig[ConfigType]()
+config := config.Init[ConfigType]()
 // access current configuration attributes
 cfg := config.GetCfg()
 cfg.AppName = "NewName"
@@ -37,4 +37,16 @@ Implement waiting goroutine for config change on the fly in your modules:
 
 ```go
 _ = <-config.GetSubscriber("name_of_subscriber")
+```
+
+You can remove subscriber by given name on the fly as well:
+
+```go
+c.RemoveSubscriber("name_of_subscriber")
+```
+
+Library also support optional parameters with high order functions:
+
+```go
+config := config.Init[ConfigType](WithPath("./configuration_dir"), WithName("configuration_name"))
 ```
